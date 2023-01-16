@@ -5,23 +5,13 @@ import "solidity-coverage";
 // eslint-disable-next-line node/no-extraneous-import
 import "hardhat-contract-sizer";
 import "@nomiclabs/hardhat-etherscan";
+import "hardhat-gas-reporter";
 
 dotenv.config();
 
-// Dear Student,
-//
-// This hardhat.config.ts file differs from the Hardhat project boilerplate generated
-// when you run `npx hardhat` in a new directory. We suggest you add these same lines
-// of code to your future projects, in order to easily setup:
-// - environment variables via `dotenv` (you'll need to `mv .env.example .env`)
-// - Etherscan source verification
-//
-// Love,
-// Macro Instruction Team
-
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.9",
+    version: "0.8.17",
     settings: {
       optimizer: {
         enabled: true,
