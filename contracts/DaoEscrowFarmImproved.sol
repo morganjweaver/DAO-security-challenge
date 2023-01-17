@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.11;
-
+import "hardhat/console.sol";
 /*
  *   Offchain Labs Solidity technical challenge:
  *
@@ -24,44 +24,49 @@ pragma solidity ^0.8.11;
 
 contract DaoEscrowFarmImproved {
 
-    struct UserDeposit {
-        uint256 balance;
-        uint256 blockDeposited;
-    }
-    mapping(address => UserDeposit) public deposits;
-
+    // struct UserDeposit {
+    //     uint256 balance;
+    //     uint256 blockDeposited;
+    // }
+    mapping(address => uint256) public deposits;
+    mapping(address => uint256) public blockDeposits;
     constructor() {}
 
     receive() external payable {
         uint256 DEPOSIT_LIMIT_PER_BLOCK = 1 ether;
 
-        require(msg.value <= DEPOSIT_LIMIT_PER_BLOCK, "TOO_MUCH_ETH");
+        if(msg.value > DEPOSIT_LIMIT_PER_BLOCK) revert DepositLimitMet();
 
-        UserDeposit memory prev = deposits[tx.origin]; 
+        uint256 balance = deposits[tx.origin]; 
+        uint256 blockDeposited = blockDeposits[tx.origin];
 
-        uint256 maxDeposit = prev.blockDeposited == block.number
-            ? DEPOSIT_LIMIT_PER_BLOCK - prev.balance
+        uint256 maxDeposit = blockDeposited == block.number
+            ? DEPOSIT_LIMIT_PER_BLOCK - balance
             : DEPOSIT_LIMIT_PER_BLOCK;
 
-        prev.balance += msg.value;
-        prev.blockDeposited = block.number;
+        deposits[tx.origin] += msg.value;
+        blockDeposits[tx.origin] = block.number;
         // Refund LAST:
         if(msg.value > maxDeposit) {
             // refund user if they are above the max deposit allowed
             uint256 refundValue = maxDeposit - msg.value;
-            prev.balance -= refundValue;
+            deposits[tx.origin] -= refundValue;
             (bool success,) = tx.origin.call{value: refundValue}("");
-            require(success, "ETH_TRANSFER_FAIL");
+            if(!success) revert EthTransferFail();
         }
+        console.log("Block number %s total deposit of %s", block.number, deposits[tx.origin]);
     }
 
     function withdraw(uint256 amount) external {
-        UserDeposit storage prev = deposits[tx.origin];
-        require(prev.balance >= amount, "NOT_ENOUGH_ETH");
+        if(deposits[tx.origin] < amount) revert InsufficientFunds();
 
-        prev.balance -= amount;
-        
-        (bool success,) = msg.sender.call{value: amount}("");
-        require(success, "ETH_TRANSFER_FAIL");
+        deposits[tx.origin] -= amount;
+        (bool success,) = tx.origin.call{value: amount}("");
+        if(!success) revert EthTransferFail();
     }
+
+    error EthTransferFail();
+    error InsufficientFunds();
+    error DepositLimitMet();
+
 }

@@ -28,7 +28,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       accounts: {
         count: 20,
-        accountsBalance: "10000000000000000000000", // 10ETH (Default)
+        accountsBalance: "20000000000000000000000", // 20ETH (Default)
       },
     },
   },

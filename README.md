@@ -26,6 +26,10 @@
 
     Modifications:
 
+    - Moved external call (refund) to end of function for reentrancy protection
+    - Moved 1 ETH amount to function body
+    - Swapped require statements for if/revert statements with errors (saves small amount of gas)
+    - 
     We don't expect you to spend more than 30 minutes on the challenge. It's not required to find all the issues, but to demonstrate and explain the ones that you do find.
  
 
