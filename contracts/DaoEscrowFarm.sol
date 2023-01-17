@@ -1,6 +1,5 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.11;
-import "hardhat/console.sol";
 
 /*
  *   Offchain Labs Solidity technical challenge:
@@ -56,10 +55,6 @@ contract DaoEscrowFarm {
 
         prev.balance += msg.value;
         prev.blockDeposited = block.number;
-        console.log("Deposited %s from address %s for new total of %s", 
-            msg.value, 
-            msg.sender,
-            prev.balance);
     }
 
     function withdraw(uint256 amount) external {

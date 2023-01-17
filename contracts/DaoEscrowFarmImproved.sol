@@ -1,6 +1,5 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.11;
-import "hardhat/console.sol";
 /*
  *   Offchain Labs Solidity technical challenge:
  *
@@ -24,49 +23,59 @@ import "hardhat/console.sol";
 
 contract DaoEscrowFarmImproved {
 
-    // struct UserDeposit {
-    //     uint256 balance;
-    //     uint256 blockDeposited;
-    // }
-    mapping(address => uint256) public deposits;
-    mapping(address => uint256) public blockDeposits;
+     struct UserDeposit {
+        uint256 balance;
+        uint256 blockDeposited;
+    }
+    mapping(address => UserDeposit) public deposits;
+    mapping(address => uint256) public refunds;
+    uint256 constant DEPOSIT_LIMIT_PER_BLOCK = 1 ether;
+
     constructor() {}
 
     receive() external payable {
-        uint256 DEPOSIT_LIMIT_PER_BLOCK = 1 ether;
-
         if(msg.value > DEPOSIT_LIMIT_PER_BLOCK) revert DepositLimitMet();
 
-        uint256 balance = deposits[tx.origin]; 
-        uint256 blockDeposited = blockDeposits[tx.origin];
+        UserDeposit storage prev = deposits[tx.origin];
 
-        uint256 maxDeposit = blockDeposited == block.number
-            ? DEPOSIT_LIMIT_PER_BLOCK - balance
+        uint256 maxDeposit = prev.blockDeposited == block.number
+            ? DEPOSIT_LIMIT_PER_BLOCK - prev.balance
             : DEPOSIT_LIMIT_PER_BLOCK;
 
-        deposits[tx.origin] += msg.value;
-        blockDeposits[tx.origin] = block.number;
+        unchecked{
+        prev.balance += msg.value;
+        prev.blockDeposited = block.number;
+        }
         // Refund LAST:
         if(msg.value > maxDeposit) {
             // refund user if they are above the max deposit allowed
             uint256 refundValue = maxDeposit - msg.value;
-            deposits[tx.origin] -= refundValue;
-            (bool success,) = tx.origin.call{value: refundValue}("");
-            if(!success) revert EthTransferFail();
+            prev.balance -= refundValue;
+            refunds[tx.origin] += refundValue;
         }
-        console.log("Block number %s total deposit of %s", block.number, deposits[tx.origin]);
+    }
+    // Refund is now a pull model vs a push model
+    function refund() external {
+        uint256 amount = refunds[tx.origin];
+        if(amount == 0) revert NoRefundExists();
+        refunds[tx.origin] = 0;
+        (bool success,) = tx.origin.call{value: amount}("");
+        if(!success) revert EthTransferFail();
     }
 
     function withdraw(uint256 amount) external {
-        if(deposits[tx.origin] < amount) revert InsufficientFunds();
+        UserDeposit storage prev = deposits[tx.origin]; 
 
-        deposits[tx.origin] -= amount;
-        (bool success,) = tx.origin.call{value: amount}("");
-        if(!success) revert EthTransferFail();
+        if(prev.balance < amount) revert InsufficientFunds();
+
+            prev.balance -= amount;
+            (bool success,) = tx.origin.call{value: amount}("");
+            if(!success) revert EthTransferFail();
     }
 
     error EthTransferFail();
     error InsufficientFunds();
     error DepositLimitMet();
+    error NoRefundExists();
 
 }

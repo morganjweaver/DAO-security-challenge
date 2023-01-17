@@ -26,10 +26,16 @@
 
     Modifications:
 
-    - Moved external call (refund) to end of function for reentrancy protection
-    - Moved 1 ETH amount to function body
+    - Moved refund to end of function for reentrancy protection
     - Swapped require statements for if/revert statements with errors (saves small amount of gas)
-    - 
+    - Moved refund into a separate function for pull-over-push model; save gas by doing ONE refund vs piecemeal (gas cost: 21000 units!) every time
+    - Couldn't figure out how to test gas cost of a built-in override (receive function) with hardhat-gas-reporter, 
+      but did some checks with ethers tests and found a reduction in gas cost overall, especially amoritized over multiple deposits with refunds. 
+  
+    Other findings:
+    - Could use merkle tree instead of structs to check membership/blocks of addresses, save small amount of gas
+    - Seems like trying to deposit twice in a single block isn't really possible if the amount in the struct is already > 1 ETH? 
+  
     We don't expect you to spend more than 30 minutes on the challenge. It's not required to find all the issues, but to demonstrate and explain the ones that you do find.
  
 

@@ -81,7 +81,7 @@ describe("DAOAttack", () => {
           const balance:BigNumber = await provider.getBalance(deployer.address);
           const addr1Bal = await provider.getBalance(deployer.address)
           const txValue = ethers.utils.parseEther('0.03').mul(BigNumber.from('4'))
-          const tx = await deployer.sendTransaction({ to: dao.address, value: ethers.utils.parseEther('.01') });
+          const tx = await deployer.sendTransaction({ to: dao.address, value: ethers.utils.parseEther('.5') });
           const receipt = await tx.wait()
           console.log('total ether spent on gas for transaction: \t', ethers.utils.formatEther(receipt.gasUsed.mul(receipt.effectiveGasPrice)))
           console.log('balance difference minus transaction value: \t', ethers.utils.formatEther(addr1Bal.sub(await provider.getBalance(deployer.address)).sub(txValue)))
@@ -94,14 +94,14 @@ describe("DAOAttack", () => {
           console.log("Deployer bal: %s", ethers.utils.formatEther(balance));
           const addr1Bal = await provider.getBalance(deployer.address)
           const txValue = ethers.utils.parseEther('0.03').mul(BigNumber.from('4'))
-          const tx = await deployer.sendTransaction({ to: daoImproved.address, value: ethers.utils.parseEther('.01') });
+          const tx = await deployer.sendTransaction({ to: daoImproved.address, value: ethers.utils.parseEther('.5') });
           const receipt = await tx.wait()
           console.log('total ether spent on gas for transaction: \t', ethers.utils.formatEther(receipt.gasUsed.mul(receipt.effectiveGasPrice)))
           console.log('balance difference minus transaction value: \t', ethers.utils.formatEther(addr1Bal.sub(await provider.getBalance(deployer.address)).sub(txValue)))
 
         });
 
-        it.only("Correctly updates deposit amounts on withdraw with new data structures in Improved Contract", async () => {
+        it("Correctly updates deposit amounts on withdraw with new data structures in Improved Contract", async () => {
           const {daoImproved, deployer, provider} = await loadFixture(setupFixture);
           setBalance(deployer.address, ethers.utils.parseEther("10"));
           const balance = await provider.getBalance(deployer.address);
@@ -110,7 +110,13 @@ describe("DAOAttack", () => {
           const newbalance:BigNumber = await provider.getBalance(deployer.address);
           console.log("Balance of deployer: %s", newbalance);
           const wtx = await daoImproved.connect(deployer).withdraw(ethers.utils.parseEther('.01'));
-
+          // verified with console logs in Improved contract
         });
+
+        it("Fail reentrancy attack on Improved Contract", async () => {
+          const {daoImproved, attack, deployer} = await loadFixture(setupFixture);
+          expect(await attack.hackContract()).to.be.reverted;
+   
+      });
     })
 })
